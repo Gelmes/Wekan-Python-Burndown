@@ -28,7 +28,6 @@ def get_parenthesis(string):
 
 # Set up database connection
 client = MongoClient(URL, PORT)
-print (client)
 db = client.wekan
 cards = db.cards.find({'boardId' : 'SHKrzWPfwbRDCr2jW'}).sort("dateLastActivity")
 
@@ -38,12 +37,9 @@ values = 0                          # Running Total
 total  = [0]
 for card in cards:
     expected = get_parenthesis(card['title'])
-    print("Title   : " + card['title'])
+    #print("Title   : " + card['title'])
     if(expected):
-        print("Expected: " + str(expected))
-        # date1 = time.strptime(prev_date     , "%Y-%m-%dT%H:%M:%S.%fZ")
-        #print(card['dateLastActivity'])
-        # date2 = time.strptime(card['dateLastActivity'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        #print("Expected: " + str(expected))
         if(card['dateLastActivity'].date() > dates[-1].date()):
             dates.append(card['dateLastActivity'])
             total.append(total[-1]+expected)
@@ -51,8 +47,8 @@ for card in cards:
             total[-1] += expected
 dates.pop(0)
 total.pop(0)
-print(dates)
-print(total)
+#print(dates) # "%Y-%m-%dT%H:%M:%S.%fZ"
+#print(total)
 
 
 np_dates = np.array(dates)
@@ -80,7 +76,7 @@ ax.set_xlim(datemin, datemax)
 
 # format the coords message box
 def price(x):
-    return '$%1.2f' % x
+    return '%1f Hours' % x
 ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
 ax.format_ydata = price
 ax.grid(True)
