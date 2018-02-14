@@ -23,7 +23,7 @@ def get_parenthesis(string):
     if(start != -1):
         if(end != -1):
             value= int(string[start+1:end])
-    return value 
+    return value
 
 
 # Set up database connection
@@ -61,6 +61,7 @@ dayFmt = mdates.DateFormatter('%b-%d')
 
 fig, ax = plt.subplots()
 ax.plot(np_dates, np_total)
+ax.plot(np_dates, np_total*2)
 
 # format the ticks
 ax.xaxis.set_major_locator(days)
