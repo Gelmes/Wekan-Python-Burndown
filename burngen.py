@@ -188,6 +188,7 @@ class BurnChart:
         for card in done_cards:
             print(card['title'])
         done_cards.rewind()
+
         """
 
         # Create timeline
