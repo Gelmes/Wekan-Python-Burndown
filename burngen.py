@@ -31,7 +31,12 @@ class BurnChart:
         self.db = self.client.wekan
 
     def get_parenthesis(self, string):
-        """ Get number in parenthesis or return 0"""
+        """
+        Get number in parenthesis or return 0
+
+        @param  string String to parse for parenthesis database
+        @return intiger contained in parenthesis
+        """
         start = string.find("(") # Verify we have (
         end   = string.find(")") # Verify we have )
         value= 0
@@ -44,8 +49,10 @@ class BurnChart:
         """
         Get the board id given its title
 
-        title      - Title to search format
-        whole_word - Should the title match 100%, set to 1 if true"""
+        @param  title        Title to search format
+        @param  whole_word   Should the title match 100%, set to 1 if true
+        @return string containing the board id
+        """
         if(whole_word):     # Find a board that matches title 100%
             board = self.db.boards.find({'title':title})
         else:               # Find any board with the title included
@@ -58,9 +65,10 @@ class BurnChart:
         """
         Get the list id containing the title.
 
-        title      - Title to search format
-        board_id   - Board to look under
-        whole_word - Should the title match 100%, set to 1 if true
+        @param  title       Title to search format
+        @param  board_id    Board to look under
+        @param  whole_word  Should the title match 100%, set to 1 if true
+        @return string containing the lsit id
         """
         if(whole_word):     # Find a list that matches title 100%
             lst = self.db.lists.find({'title':title})
@@ -71,6 +79,13 @@ class BurnChart:
         return lst[0]['_id']
 
     def get_cards(self, board_id="", list_id=""):
+        """
+        Get the cards contained in ether or the given board and/or list
+
+        @param  board_id    Board to look under
+        @param  list_id     List to look under
+        @return array of card objects
+        """
         if(list_id == "" and board_id==""):
             cards = self.db.cards.find()
         elif(list_id == ""):
@@ -80,21 +95,24 @@ class BurnChart:
         else:
             cards = self.db.cards.find({'listId':list_id,'boardId':board_id})
 
-        return cards.sort("dateLastActivity")
+        return cards
+
+    def create_timeline(self, data):
+        pass
 
     def create_chart(self, board_title):
         """
         Adds burn down chart to current list of burndown charts
 
-        board_title - board title to get content from
+        @param  board_title board title to get content from
         """
         # Get board id and the 'done' list id
         board_id = self.get_board_id(board_title)
         done_list_id = self.get_list_id("done", board_id)
 
         # Get cards
-        cards = self.get_cards(board_id, )
-        done_cards = self.get_cards(board_id, done_list_id)
+        cards = self.get_cards(board_id).sort("createdAt")
+        done_cards = self.get_cards(board_id, done_list_id).sort("dateLastActivity")
 
         print(board_id)
         print(done_list_id)
