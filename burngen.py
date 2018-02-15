@@ -31,6 +31,20 @@ class BurnChart:
         self.client = MongoClient(self.URL, self.PORT)
         self.db = self.client.wekan
 
+        self.fig, self.ax = plt.subplots()
+        # format the coords message box
+        def price(x):
+            return '%1f Hours' % x
+
+        # Format the axis labels
+        self.ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
+        self.ax.format_ydata = price
+        self.ax.grid(True)
+
+        # rotates and right aligns the x labels, and moves the bottom of the
+        # axes up to make room for them
+        self.fig.autofmt_xdate()
+
 
     ## Get number in parenthesis or return 0
     #
@@ -90,6 +104,12 @@ class BurnChart:
             cards = self.db.cards.find({'listId':list_id,'boardId':board_id})
         return cards
 
+    ## Sets the title of the plot
+    #
+    #  @param  title title to give the chart
+    def set_title(self, title):
+        plt.title(title)
+
     ## Create a timeline numpy arrays from the provided cards.
     #
     #  Sorting is generated using sort_by and  also used to create daily
@@ -131,8 +151,8 @@ class BurnChart:
         #dayFmt = mdates.DateFormatter('%b-%d')
 
         # Create our plots
-        fig, ax = plt.subplots()
-        ax.plot(dates, total)
+        #fig, ax = plt.subplots()
+        self.ax.plot(dates, total)
 
         # format the ticks
         #ax.xaxis.set_major_locator(days)
@@ -140,37 +160,26 @@ class BurnChart:
         #ax.xaxis.set_minor_locator(hours)
 
         # Get maximum points to scale things properly
-        fst = dates.min()
-        snd = dates.max()
-        datemin = datetime.date(fst.year, fst.month, fst.day)
-        datemax = datetime.date(snd.year, snd.month, snd.day)
-        ax.set_xlim(datemin, datemax)
+        #fst = dates.min()
+        #snd = dates.max()
+        #datemin = datetime.date(fst.year, fst.month, fst.day)
+        #datemax = datetime.date(snd.year, snd.month, snd.day)
+        #ax.set_xlim(datemin, datemax)
 
-        # format the coords message box
-        def price(x):
-            return '%1f Hours' % x
-
-        # Format the axis labels
-        ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
-        ax.format_ydata = price
-        ax.grid(True)
-
-        # rotates and right aligns the x labels, and moves the bottom of the
-        # axes up to make room for them
-        fig.autofmt_xdate()
-        plt.show()
 
 
     ## Adds burn down chart to current list of burndown charts
     #
     #  @param  board_title board title to get content from
     def create_chart(self, board_title):
+        self.set_title(board_title + " Burndown")
+
         # Get board id and the 'done' list id
         board_id = self.get_board_id(board_title)
         done_list_id = self.get_list_id("done", board_id)
 
         # Get cards
-        #cards = self.get_cards(board_id).sort("createdAt")
+        cards = self.get_cards(board_id).sort("createdAt")
         done_cards = self.get_cards(board_id, done_list_id).sort("dateLastActivity")
 
         """
@@ -182,16 +191,19 @@ class BurnChart:
         """
 
         # Create timeline
-        data = self.create_timeline(done_cards, "dateLastActivity")
+        data = self.create_timeline(cards, "createdAt")
+        done_data = self.create_timeline(done_cards, "dateLastActivity")
 
         # Create plots
         self.create_plot(data)
+        self.create_plot(done_data)
+        self.render()
 
 
 
     ## Renders/draws the charts that are in the list of burndown charts
     def render(self):
-        pass
+        plt.show()
 
 if __name__ == "__main__":
     BC = BurnChart()
