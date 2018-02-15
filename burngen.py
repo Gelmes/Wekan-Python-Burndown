@@ -88,36 +88,78 @@ class BurnChart:
             cards = self.db.cards.find({'listId':list_id})
         else:
             cards = self.db.cards.find({'listId':list_id,'boardId':board_id})
-
         return cards
 
-    ## Create a timeline array from the provided cards.
+    ## Create a timeline numpy arrays from the provided cards.
     #
-    #  Sorting is generated using sort_by and  also use to create daily
-    #  progress total. The generated timeline will use the parenthesis values
-    #  to calculate the running total. commont sorting values would be
-    #  createdAt and dateLastActivity.
+    #  Sorting is generated using sort_by and  also used to create daily
+    #  progress running total. The generated timeline will use the parenthesis
+    #  values to calculate the running total. commont sorting values would be
+    #  `createdAt` and `dateLastActivity`.
     #
-    #  @param cards    input card array to convert
+    #  @param cards    input card cursor object array to convert
     #  @param sort_by  string of value to sort by
     #  @return tupple containing the dates and running total
-    def create_timeline(self, cards, sort_by):
-        dates  = [datetime.datetime(2000,1,1)]
-        values = 0                          # Running Total
+    def create_timeline(self, cards, date_column):
+        dates  = [datetime.datetime(2000,1,1)]  # Start from a date before 9/11
         total  = [0]
         for card in cards:
-            expected = get_parenthesis(card['title'])
-            #print("Title   : " + card['title'])
+            expected = self.get_parenthesis(card['title'])
             if(expected):
-                #print("Expected: " + str(expected))
-                if(card[sort_by].date() > dates[-1].date()):
-                    dates.append(card[sort_by])
+                if(card[date_column].date() > dates[-1].date()):
+                    dates.append(card[date_column])
                     total.append(total[-1]+expected)
                 else:
                     total[-1] += expected
-        dates.pop(0)
-        total.pop(0)
-        return dates, total
+        dates.pop(0) # Remove the initial dummy element
+        total.pop(0) # Remove the initial dummy element
+        return np.array(dates), np.array(total) # Convert to numpy arrays
+
+    ## Generate a plot from the provided data
+    #
+    #  The data is expected to be formated in tupple form with the dates as
+    #  the first element and the running total as the second element
+    #  @param  data data with date as first element and running total as second
+    def create_plot(self, data):
+        # Extract data so its easier to identify
+        dates = data[0]
+        total = data[1]
+
+        # Locate specific markers for generating tick markers later
+        #days = mdates.DayLocator()              # every day
+        #hours = mdates.HourLocator(interval=6)  # every 6 hours
+        #dayFmt = mdates.DateFormatter('%b-%d')
+
+        # Create our plots
+        fig, ax = plt.subplots()
+        ax.plot(dates, total)
+
+        # format the ticks
+        #ax.xaxis.set_major_locator(days)
+        #ax.xaxis.set_major_formatter(dayFmt)
+        #ax.xaxis.set_minor_locator(hours)
+
+        # Get maximum points to scale things properly
+        fst = dates.min()
+        snd = dates.max()
+        datemin = datetime.date(fst.year, fst.month, fst.day)
+        datemax = datetime.date(snd.year, snd.month, snd.day)
+        ax.set_xlim(datemin, datemax)
+
+        # format the coords message box
+        def price(x):
+            return '%1f Hours' % x
+
+        # Format the axis labels
+        ax.format_xdata = mdates.DateFormatter('%Y-%m-%d')
+        ax.format_ydata = price
+        ax.grid(True)
+
+        # rotates and right aligns the x labels, and moves the bottom of the
+        # axes up to make room for them
+        fig.autofmt_xdate()
+        plt.show()
+
 
     ## Adds burn down chart to current list of burndown charts
     #
@@ -128,13 +170,23 @@ class BurnChart:
         done_list_id = self.get_list_id("done", board_id)
 
         # Get cards
-        cards = self.get_cards(board_id).sort("createdAt")
+        #cards = self.get_cards(board_id).sort("createdAt")
         done_cards = self.get_cards(board_id, done_list_id).sort("dateLastActivity")
 
+        """
         print(board_id)
         print(done_list_id)
         for card in done_cards:
             print(card['title'])
+        done_cards.rewind()
+        """
+
+        # Create timeline
+        data = self.create_timeline(done_cards, "dateLastActivity")
+
+        # Create plots
+        self.create_plot(data)
+
 
 
     ## Renders/draws the charts that are in the list of burndown charts
